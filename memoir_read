@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+'''
+This is a sort oriented to block-matching; that is, if a line matches, the
+whole block should be displayed.
+
+atm we are reinventing the grep-wheel; it should be possible to integrate
+this with grep, but still is not.
+'''
+import sys
+import os
+
+
+def get_block_around(buf, matcher):
+    '''Return a tuple (date, content) representing a diary entry that contains
+    the first line that matches matcher.
+    matcher is a function which accept one string argument (a line) and returns
+    a boolean.'''
+    ret = []  # a list of entries
+    temp = []  # entries itself are lists
+    good = False
+    for line in buf:
+        if line.startswith('-'):
+            if good == True:
+                ret.append((temp[0], temp[1:]))
+                good = False
+            temp = []
+            continue
+        temp.append(line[:-1])
+        if matcher(line):
+            good = True
+    if good:
+        ret.append((temp[0], temp[1:]))
+    return ret
+
+
+# we use a matcher callable instead of hardcoding the login inside
+# get_block_around because this way we can easily change the logic
+class GrepMatcher:
+    '''It should be called FgrepMatcher, as it just works with fixed strings'''
+    def __init__(self, match_string):
+        self.match_string = match_string
+
+    def __call__(self, line):
+        if line.find(self.match_string) != -1:  # found
+            return True
+        return False
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print('Invalid number of arguments')
+        print('Usage: %s PATTERN' % sys.argv[0])
+        sys.exit(1)
+    grepmatcher = GrepMatcher(sys.argv[1])
+    contexts = get_block_around(
+            open(os.path.expanduser('~/.memoir')),
+            grepmatcher)
+    if not contexts:
+        sys.exit(2)
+    for date, context in contexts:
+        print(date)
+        print('\n'.join(context))

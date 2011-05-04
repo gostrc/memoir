@@ -18,7 +18,7 @@ else:
         if len( line ) == 0:
             break
         else:
-            lines.append( line + '\n' )
+            lines.append( '\t' + line + '\n' )
 
 
 # only write the entry if the user entered something
